@@ -1,0 +1,10 @@
+CREATE DATABASE IF NOT EXISTS LibraryDB;
+USE LibraryDB;
+
+-- Thiết kế bảng Book theo yêu cầu Task T1
+CREATE TABLE Book (
+    id INT PRIMARY KEY AUTO_INCREMENT,          -- Mã sách (Khóa chính, tự tăng)
+    title VARCHAR(255) NOT NULL,               -- Tên sách
+    author VARCHAR(255) NOT NULL,              -- Tác giả
+    isbn VARCHAR(50) UNIQUE NOT NULL           -- Mã chuẩn quốc tế (Không trùng lặp)
+);
