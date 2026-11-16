@@ -1,102 +1,105 @@
+
 import pytest
 from unittest.mock import Mock
 
-from src.services.book_service import (
-    BookService,
-    BookAlreadyExistsError
-)
+from services.book_service import BookService
 
 
-# Tạo dữ liệu sách giả lập
+# Tao du lieu sach gia lap
 class Book:
-    def __init__(self, book_id, title, author):
+    def __init__(self, book_id, title, author, year=2024):
         self.book_id = book_id
         self.title = title
         self.author = author
+        self.year = year
 
 
-# Khởi tạo dữ liệu trước mỗi test
+# Khoi tao Service truoc moi test
 @pytest.fixture
 def setup_service():
     mock_repository = Mock()
+    mock_repository.get_all_books.return_value = []
+
     service = BookService(mock_repository)
 
     return service, mock_repository
 
 
-# TEST 1: Thêm sách thành công
+# TEST 1: Them sach thanh cong
 def test_add_book_success(setup_service):
     service, repository = setup_service
 
     book = Book("B001", "Lap trinh Python", "Nguyen Van A")
 
-    repository.find_by_id.return_value = None
-
     result = service.addBook(book)
 
-    assert result is True
+    assert result[0] is True
+    assert result[1] == "Them sach thanh cong!"
 
-    repository.save.assert_called_once_with(book)
+    repository.add_book.assert_called_once_with(book)
 
 
-# TEST 2: Thêm sách bị trùng mã
+# TEST 2: Them sach bi trung ma
 def test_add_book_duplicate(setup_service):
     service, repository = setup_service
 
     book = Book("B001", "Lap trinh Python", "Nguyen Van A")
 
-    repository.find_by_id.return_value = book
+    repository.get_all_books.return_value = [book]
 
-    with pytest.raises(BookAlreadyExistsError):
-        service.addBook(book)
+    result = service.addBook(book)
 
-    repository.save.assert_not_called()
+    assert result[0] is False
+    assert result[1] == "Ma sach da ton tai!"
+
+    repository.add_book.assert_not_called()
 
 
-# TEST 3: Thiếu mã sách
+# TEST 3: Thieu ma sach
 def test_add_book_empty_id(setup_service):
     service, repository = setup_service
 
     book = Book("", "Lap trinh Python", "Nguyen Van A")
 
-    with pytest.raises(ValueError):
-        service.addBook(book)
+    result = service.addBook(book)
 
-    repository.save.assert_not_called()
+    assert result[0] is False
+    repository.add_book.assert_not_called()
 
 
-# TEST 4: Thiếu tên sách
+# TEST 4: Thieu ten sach
 def test_add_book_empty_title(setup_service):
     service, repository = setup_service
 
     book = Book("B001", "", "Nguyen Van A")
 
-    with pytest.raises(ValueError):
-        service.addBook(book)
+    result = service.addBook(book)
 
-    repository.save.assert_not_called()
+    assert result[0] is False
+    repository.add_book.assert_not_called()
 
 
-# TEST 5: Thiếu tên tác giả
+# TEST 5: Thieu ten tac gia
 def test_add_book_empty_author(setup_service):
     service, repository = setup_service
 
     book = Book("B001", "Lap trinh Python", "")
 
-    with pytest.raises(ValueError):
-        service.addBook(book)
+    result = service.addBook(book)
 
-    repository.save.assert_not_called()
+    assert result[0] is False
+    repository.add_book.assert_not_called()
 
 
-# TEST 6: Kiểm tra Repository được gọi đúng một lần
-def test_repository_save_called_once(setup_service):
+# TEST 6: Nam xuat ban khong hop le
+def test_add_book_invalid_year(setup_service):
     service, repository = setup_service
 
-    book = Book("B002", "Co so du lieu", "Tran Van B")
+    book = Book("B002", "Co so du lieu", "Tran Van B", -2024)
 
-    repository.find_by_id.return_value = None
+    result = service.addBook(book)
 
-    service.addBook(book)
+    assert result[0] is False
+    assert result[1] == "Nam xuat ban khong hop le!"
 
-    repository.save.assert_called_once()
+    repository.add_book.assert_not_called()
